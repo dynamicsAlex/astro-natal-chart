@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Natal chart — wheel (left) + full interpretation panel (right)."""
+"""Natal chart — wheel (left) + info panel (1/3) + interpretation panel (2/3)."""
 import json, math, os, subprocess, sys, argparse, shutil
 from collections import Counter
 from interp_data import (HOUSE_TEXTS_RU, HOUSE_TEXTS_EN, PLANET_MEANING_RU,
@@ -99,10 +99,11 @@ def rtext(draw, x, y, text, size, fill, cy=False):
         draw.text((cx,y),ch,fill=fill,font=f)
         cx+=ch_w(ch,f)
 
-def rcent(draw, cx, y, text, size, fill):
+def rcent(draw, cx, y, text, size, fill, ox=0):
+    """Center text at cx (+ optional ox offset), starting at y."""
     sf=fnt(size,sym=True); tf=fnt(size,sym=False)
     tw=sum(ch_w(ch,sf if is_z(ch) else tf) for ch in text)
-    x=cx-tw//2
+    x=cx-tw//2+ox
     for ch in text:
         f=sf if is_z(ch) else tf
         draw.text((x,y),ch,fill=fill,font=f)
@@ -147,7 +148,7 @@ T = {
     "asp":"\u0410\u0421\u041f\u0415\u041a\u0422\u042b" if RU else "ASPECTS",
     "el":"\u0421\u0442\u0438\u0445\u0438\u0438" if RU else "Elements",
     "info":"\u041d\u0410\u0422\u0410\u041b\u042c\u041d\u0410\u042f \u041a\u0410\u0420\u0422\u0410" if RU else "NATAL CHART",
-    "interp":"\u0422\u041e\u041b\u041a\u041e\u0412\u0410\u041d\u0418\u0415" if RU else "INTERPRETATION",
+    "interp":"\u0418\u041d\u0422\u0415\u0420\u041f\u0420\u0415\u0422\u0410\u0426\u0418\u042f" if RU else "INTERPRETATION",
     "houses":"\u0414\u041e\u041c\u0410" if RU else "HOUSES",
     "aspects_blk":"\u0410\u0421\u041f\u0415\u041a\u0422\u042b \u0418 \u041a\u041e\u041d\u0424\u0418\u0413\u0423\u0420\u0410\u0426\u0418\u0418" if RU else "ASPECTS & CONFIGURATIONS",
     "cj":"\u0421\u043e\u0435\u0434" if RU else "Conj",
@@ -160,17 +161,30 @@ T = {
     "stellium":"\u0421\u0422\u0415\u041b\u041b\u0418\u0423\u041c" if RU else "STELLIUM",
     "dominant_el":"\u0414\u043e\u043c\u0438\u043d\u0438\u0440\u0443\u044e\u0449\u0430\u044f \u0441\u0442\u0438\u0445\u0438\u044f" if RU else "Dominant element",
     "retro_mark":" \u211e" if RU else " R",
+    "data_title":"\u041e\u0421\u041d\u041e\u0412\u041d\u042b\u0415 \u0414\u0410\u041d\u041d\u042b\u0415" if RU else "ESSENTIAL DATA",
+    "planet_table":"\u041f\u041b\u0410\u041d\u0415\u0422\u042b" if RU else "PLANETS",
+    "house_table":"\u0414\u041e\u041c\u0410" if RU else "HOUSES",
 }
 
 # ═══ LAYOUT ═══
 WHEEL = 2160
 PANEL_W = 3600
-TOT_W = WHEEL + PANEL_W
-TOT_H = TOT_W // 2  # 2880
+# Info panel = 1/3 of right side, Interp panel = 2/3
+INFO_W = PANEL_W // 3       # 1200
+INTERP_W = PANEL_W - INFO_W # 2400
+TOT_W = WHEEL + PANEL_W     # 5760
+TOT_H = TOT_W // 2          # 2880
+
+# Info panel x-origin
+IX = WHEEL
+# Interp panel x-origin
+IPX = WHEEL + INFO_W
 
 img = Image.new('RGB',(TOT_W,TOT_H),(8,8,20))
 dw = ImageDraw.Draw(img)
 FS=19; FM=22; FL=26; FH=20; FZL=38
+LH = 22  # line height for body text
+
 HM = HOUSE_TEXTS_RU if RU else HOUSE_TEXTS_EN
 PMean = PLANET_MEANING_RU if RU else PLANET_MEANING_EN
 SK = SIGN_KEYWORDS_RU if RU else SIGN_KEYWORDS_EN
@@ -270,16 +284,13 @@ for ai,(ac,al) in enumerate(ail):
     dw.rectangle((asx,ry+4,asx+22,ry+24),fill=ac)
     rtext(dw,asx+30,ry,al,FS-2,ac)
 
-dw.line([(WHEEL,0),(WHEEL,TOT_H)],fill=(80,80,120),width=3)
+# Panel dividers
+dw.line([(IX,0),(IX,TOT_H)],fill=(80,80,120),width=3)
+dw.line([(IPX,0),(IPX,TOT_H)],fill=(80,80,120),width=3)
 
 # ═══════════════════════════════════════════════════════════
-# RIGHT PANEL — Full interpretation
+# HELPER: word-wrap with per-panel max width
 # ═══════════════════════════════════════════════════════════
-PX = WHEEL + 30
-PY = 20
-PW = PANEL_W - 50
-LH = 22  # line height for body text
-
 def wrap_text(text, font, max_w):
     words = text.split(' ')
     lines = []
@@ -296,47 +307,200 @@ def wrap_text(text, font, max_w):
     if cur: lines.append(cur)
     return lines
 
-def draw_section(title, lines, title_clr, body_clr, is_header=False):
-    global PY
-    _fs = FM if is_header else FS
-    rtext(dw,PX,PY,title,_fs,title_clr)
-    PY += _fs + 6
-    _tf = fnt(FS-1, sym=False)
-    for line in lines:
-        wrapped = wrap_text(line, _tf, PW-10)
-        for wl in wrapped:
-            rtext(dw,PX+5,PY,wl,FS-1,body_clr)
-            PY += LH
-    if is_header:
-        PY += 14
-    else:
-        PY += 8
+# ═══════════════════════════════════════════════════════════
+# INFO PANEL (1/3) — Essential data, planet table, house table
+# ═══════════════════════════════════════════════════════════
+# Padding inside info panel
+IP = 18  # inner padding
+IXL = IX + IP        # left x for text
+IY = 20              # current y
+IPW = INFO_W - IP*2  # usable width
 
-def divider():
-    global PY
-    dw.line([(PX,PY),(PX+PW,PY)],fill=(60,60,100),width=1)
-    PY += 10
+def info_text(x, y, text, size, fill, center=False):
+    """Draw text in info panel with wrapping."""
+    sf = fnt(size, sym=True); tf = fnt(size, sym=False)
+    if center:
+        tw = sum(ch_w(ch, sf if is_z(ch) else tf) for ch in text)
+        x = x + (IPW - tw) // 2
+    for ch in text:
+        f = sf if is_z(ch) else tf
+        dw.text((x, y), ch, fill=fill, font=f)
+        x += ch_w(ch, f)
 
-# ── Title + Name ──
-rcent(dw,PX+PW//2,PY,T["info"],FL+6,(255,255,200))
-PY += FL + 18
+def info_cent(cx_y, y, text, size, fill):
+    """Center text in info panel."""
+    info_text(IXL, y, text, size, fill, center=True)
+
+def info_wrap(line, size, max_w, fill, indent=0):
+    """Draw a wrapped line in info panel, return height used."""
+    global IY
+    _tf = fnt(size, sym=False)
+    wrapped = wrap_text(line, _tf, max_w)
+    for wl in wrapped:
+        info_text(IXL + indent, IY, wl, size, fill)
+        IY += LH
+    return len(wrapped) * LH
+
+def info_divider():
+    global IY
+    dw.line([(IX+8,IY),(IX+INFO_W-8,IY)],fill=(60,60,100),width=1)
+    IY += 10
+
+# ── Chart Title + Name ──
+info_cent(IXL, IY, T["info"], FL, (255,255,200))
+IY += FL + 14
 if args.name:
-    rcent(dw,PX+PW//2,PY,args.name,FM+2,(200,200,240))
-    PY += FM + 14
+    info_cent(IXL, IY, args.name, FM, (200,200,240))
+    IY += FM + 10
 
-# ── Essential data ──
-rtext(dw,PX,PY,chart["date"]+"  "+chart["time"],FS+1,(200,200,220)); PY+=26
-rtext(dw,PX,PY,chart["city_full"],FS+1,(200,200,220)); PY+=26
-rtext(dw,PX,PY,"%.4fN  %.4fE"%(chart["lat"],chart["lon"]),FS,(170,170,190)); PY+=26
-rtext(dw,PX,PY,chart["tz"],FS,(170,170,190)); PY+=28
+info_divider()
+
+# ── Essential Data ──
+info_text(IXL, IY, T["data_title"], FM, (255,220,100))
+IY += FM + 6
+
+info_text(IXL, IY, chart["date"]+"  "+chart["time"], FS, (200,200,220)); IY += 22
+info_text(IXL, IY, chart["city_full"], FS, (200,200,220)); IY += 22
+info_text(IXL, IY, "%.4fN  %.4fE"%(chart["lat"],chart["lon"]), FS-1, (170,170,190)); IY += 22
+info_text(IXL, IY, chart["tz"], FS-1, (170,170,190)); IY += 24
+
 asc_s = "%s: %s%s %d\u00b0%d'"%(T["asc"],ZSYM[asc_z[0]],asc_z[1],asc_z[2],asc_z[3])
 mc_s = "%s: %s%s %d\u00b0%d'"%(T["mc"],ZSYM[mc_z[0]],mc_z[1],mc_z[2],mc_z[3])
-rtext(dw,PX,PY,asc_s,FS+1,(255,255,120)); PY+=26
-rtext(dw,PX,PY,mc_s,FS+1,(255,200,100)); PY+=30
-divider()
+info_text(IXL, IY, asc_s, FS, (255,255,120)); IY += 22
+info_text(IXL, IY, mc_s, FS, (255,200,100)); IY += 24
+
+info_divider()
+
+# ── Planet table ──
+info_text(IXL, IY, T["planet_table"], FM, (255,220,100))
+IY += FM + 4
+
+for p in planets_raw:
+    nm = p['nr'] if RU else p['ne']
+    retro_s = '\u211e' if p['retro'] else ''
+    sign_nm = SN[p['si']]
+    line = "%s %s%s %s %d\u00b0%d'" % (p['sym'], nm, retro_s, sign_nm, p['deg'], p['min'])
+    # Planet name + sign on one line, wrapped
+    info_text(IXL, IY, line, FS-2, p['col'])
+    IY += 20
+    # House + speed on second line
+    h_line = "    %s %d" % (("дом" if RU else "House"), p['house'])
+    info_text(IXL, IY, h_line, FS-3, (140,140,160))
+    IY += 18
+    if IY > TOT_H - 40: break
+
+info_divider()
+
+# ── House cusps table ──
+info_text(IXL, IY, T["house_table"], FM, (255,220,100))
+IY += FM + 4
+
+for hd in house_data:
+    cusp_str = "%s %s %d\u00b0%d'" % (hd['sym'], hd['sab'], hd['deg'], hd['min'])
+    line = "%s  %s" % (hd['rom'], cusp_str)
+    info_text(IXL, IY, line, FS-2, (180,200,255))
+    IY += 20
+    # Planets in this house
+    if hd['pls']:
+        pl_names = ', '.join(("%s%s" % (p['nr'] if RU else p['ne'], '\u211e' if p['retro'] else '')) for p in hd['pls'])
+        pl_line = "   %s" % pl_names
+        info_wrap(pl_line, FS-3, IPW - 10, (160,180,200))
+    else:
+        info_text(IXL + 10, IY, T["no_planets"], FS-3, (100,100,120))
+        IY += LH
+    if IY > TOT_H - 40: break
+
+info_divider()
+
+# ── Aspects (compact list for info panel) ──
+info_text(IXL, IY, T["asp"], FM, (255,220,100))
+IY += FM + 4
+
+aspect_symbols = {
+    "conjunction":"\u260c","opposition":"\u260d","square":"\u25a1","trine":"\u25b3",
+    "sextile":"\u2736","quincunx":"\u26b9","semisextile":"\u26ba","semisquare":"\u2220"
+}
+for a in asp_data:
+    p1n = next((p['nr'] if RU else p['ne'] for p in planets_raw if p['abbr']==a['p1']), a['p1'])
+    p2n = next((p['nr'] if RU else p['ne'] for p in planets_raw if p['abbr']==a['p2']), a['p2'])
+    asp_sym = aspect_symbols.get(a['type'], '')
+    # Find orb
+    orb_s = ""
+    for ca in chart.get("aspects",[]):
+        if PM.get(ca.get("p1",""),(""))[0]==a['p1'] and PM.get(ca.get("p2",""),(""))[0]==a['p2']:
+            orb_s = " %.1f\u00b0"%ca.get("orb",0)
+            break
+    line = "%s %s %s%s" % (p1n, asp_sym, p2n, orb_s)
+    info_text(IXL, IY, line, FS-2, a['col'])
+    IY += 20
+    if IY > TOT_H - 40: break
+
+# ═══════════════════════════════════════════════════════════
+# INTERPRETATION PANEL (2/3) — Full interpretation text
+# ═══════════════════════════════════════════════════════════
+IPP = 20  # inner padding
+IPXL = IPX + IPP   # left x for text in interp panel
+YP = 20             # current y in interp panel
+IPWW = INTERP_W - IPP*2  # usable width for text
+
+def interp_text(x, y, text, size, fill, center=False):
+    """Draw text in interp panel."""
+    sf = fnt(size, sym=True); tf = fnt(size, sym=False)
+    if center:
+        tw = sum(ch_w(ch, sf if is_z(ch) else tf) for ch in text)
+        x = x + (IPWW - tw) // 2
+    for ch in text:
+        f = sf if is_z(ch) else tf
+        dw.text((x, y), ch, fill=fill, font=f)
+        x += ch_w(ch, f)
+
+def interp_cent(y, text, size, fill):
+    """Center text in interp panel."""
+    interp_text(IPXL, y, text, size, fill, center=True)
+
+def interp_wrap(line, size, max_w, fill, indent=0):
+    """Draw a wrapped line in interp panel, advance YP."""
+    global YP
+    _tf = fnt(size, sym=False)
+    wrapped = wrap_text(line, _tf, max_w)
+    for wl in wrapped:
+        interp_text(IPXL + indent, YP, wl, size, fill)
+        YP += LH
+    return len(wrapped) * LH
+
+def interp_divider():
+    global YP
+    dw.line([(IPX+8,YP),(IPX+INTERP_W-8,YP)],fill=(60,60,100),width=1)
+    YP += 10
+
+def draw_interp_section(title, lines, title_clr, body_clr, is_header=False, indent=5):
+    """Draw a section with title + body lines in the interp panel."""
+    global YP
+    _fs = FM if is_header else FS
+    if title:
+        interp_text(IPXL, YP, title, _fs, title_clr)
+        YP += _fs + 6
+    _tf = fnt(FS-1, sym=False)
+    for line in lines:
+        wrapped = wrap_text(line, _tf, IPWW - indent)
+        for wl in wrapped:
+            interp_text(IPXL + indent, YP, wl, FS-1, body_clr)
+            YP += LH
+    if is_header:
+        YP += 14
+    else:
+        YP += 8
+
+# ── Title ──
+interp_cent(YP, T["interp"], FL+6, (255,220,100))
+YP += FL + 18
+if args.name:
+    interp_cent(YP, args.name, FM+2, (200,200,240))
+    YP += FM + 14
+
+interp_divider()
 
 # ═══ CORE INTERPRETATION ═══
-rtext(dw,PX,PY,T["interp"],FL,(255,220,100)); PY+=FL+8
 
 # Sun
 sun = next((p for p in planets_raw if p['key']=='Sun'), None)
@@ -356,7 +520,7 @@ if sun:
             sm,
             "The Sun in %s gives focus on %s and conscious self-evaluation."%(_sn, _sk[:40].lower()),
         ]
-    draw_section("", lines, (255,220,100), (220,210,180))
+    draw_interp_section("", lines, (255,220,100), (220,210,180))
 
 # Moon
 moon = next((p for p in planets_raw if p['key']=='Moon'), None)
@@ -376,7 +540,7 @@ if moon:
             mm,
             "The Moon in %s speaks of deep needs in %s."%(sn, sk[:40].lower()),
         ]
-    draw_section("", lines, (200,200,255), (200,210,220))
+    draw_interp_section("", lines, (200,200,255), (200,210,220))
 
 # ASC
 asc_sn = SN[asc_z[0]]
@@ -391,7 +555,7 @@ else:
         "Ascendant: %s (%d\u00b0%d')  \u2014  %s"%(asc_sn,asc_z[2],asc_z[3],asc_sk),
         "The mask the person shows to the world. First impression and adaptation strategies.",
     ]
-draw_section("", lines, (255,255,120), (220,220,200))
+draw_interp_section("", lines, (255,255,120), (220,220,200))
 
 # Dominant element
 el_count = [0,0,0,0]
@@ -402,7 +566,7 @@ el_names = EL_RU if RU else EL_EN
 el_desc_ru = ["\u043d\u0430\u043f\u043e\u0440\u0438\u0441\u0442\u043e\u0441\u044c \u0438 \u0438\u043d\u0438\u0446\u0438\u0430\u0442\u0438\u0432\u0430","\u043f\u0440\u0430\u043a\u0442\u0438\u0447\u043d\u043e\u0441\u0442\u044c \u0438 \u0441\u0442\u0430\u0431\u0438\u043b\u044c\u043d\u043e\u0441\u0442\u044c","\u0438\u043d\u0442\u0435\u043b\u043b\u0435\u043a\u0442 \u0438 \u043a\u043e\u043c\u043c\u0443\u043d\u0438\u043a\u0430\u0446\u0438\u044f","\u044d\u043c\u043e\u0446\u0438\u043e\u043d\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u044c \u0438 \u0438\u043d\u0442\u0443\u0438\u0446\u0438\u044f"]
 el_desc_en = ["assertiveness and initiative","practicality and stability","intellect and communication","emotionality and intuition"]
 dom_line = "%s: %s (%d \u043f\u043b\u0430\u043d\u0435\u0442) \u2014 %s"%(T["dominant_el"],el_names[dom_el],el_count[dom_el],el_desc_ru[dom_el] if RU else el_desc_en[dom_el])
-draw_section(dom_line, [], (180,255,180), (200,220,200))
+draw_interp_section(dom_line, [], (180,255,180), (200,220,200))
 
 # Stelliums
 sign_counts = Counter(p['si'] for p in planets_raw)
@@ -419,7 +583,7 @@ for hi, cnt in house_counts.items():
         names = ['%s%s'%(p['abbr'],'\u211e' if p['retro'] else '') for p in pls]
         stellium_lines.append("%s \u0432 %s \u0434\u043e\u043c\u0435 (%d \u043f\u043b\u0430\u043d\u0435\u0442): %s"%(T["stellium"],ROMAN[hi-1],cnt,', '.join(names)))
 if stellium_lines:
-    draw_section("", stellium_lines, (255,180,255), (220,200,220))
+    draw_interp_section("", stellium_lines, (255,180,255), (220,200,220))
 
 # Retrograde planets
 retro = [p for p in planets_raw if p['retro']]
@@ -432,93 +596,91 @@ if retro:
         else:
             rlines.append("%s %s%s %d\u00b0%d' in House %s (%s) \u2014 internalized energy, karmic lessons" % (
                 p['sym'], p['ne'],' R',p['deg'],p['min'],ROMAN[p['house']-1], p['key']))
-    draw_section("", rlines, (180,180,255), (200,200,220))
+    draw_interp_section("", rlines, (180,180,255), (200,200,220))
 
-divider()
+interp_divider()
 
-# ═══ ASPECTS ═══
-rtext(dw,PX,PY,T["aspects_blk"],FL,(255,200,100)); PY+=FL+6
+# ═══ ASPECTS WITH INTERPRETATION ═══
+interp_text(IPXL, YP, T["aspects_blk"], FL, (255,200,100))
+YP += FL + 6
 
-# Build aspect planet name lookup
 def planet_name(pkey):
     p = next((x for x in planets_raw if x['key']==pkey), None)
     if not p: return pkey
     return p['nr'] if RU else p['ne']
 
 for a in asp_data:
+    if YP > TOT_H - 80: break
     p1n = planet_name(a['p1']); p2n = planet_name(a['p2'])
     a_type = a['type']
     a_mean = AM.get(a_type, a_type)
     orb_info = ""
-    # Find orb from chart data
     for ca in chart.get("aspects",[]):
         if PM.get(ca.get("p1",""),(""))[0]==a['p1'] and PM.get(ca.get("p2",""),(""))[0]==a['p2']:
             orb_info = " (orb: %.1f\u00b0)"%ca.get("orb",0)
             break
     line = "%s \u2014 %s%s : %s"%(p1n, p2n, orb_info, a_mean)
-    rtext(dw,PX+5,PY,line,FS-1,a['col'])
-    PY += LH + 2
-    if PY > TOT_H - 60: break
+    interp_wrap(line, FS-1, IPWW - 10, a['col'], indent=5)
+    YP += 2
 
-divider()
+interp_divider()
 
-# ═══ HOUSES ═══
-rtext(dw,PX,PY,T["houses"],FL,(255,220,100)); PY+=FL+6
+# ═══ HOUSES WITH INTERPRETATION ═══
+interp_text(IPXL, YP, T["houses"], FL, (255,220,100))
+YP += FL + 6
 
 for i, ht in enumerate(HM):
-    if PY > TOT_H - 80: break
+    if YP > TOT_H - 80: break
     hd = house_data[i]
     pls_in_house = hd['pls']
 
     cusp_str = "%s %s %d\u00b0%d'"%(hd['sym'], hd['sab'], hd['deg'], hd['min'])
     title_str = "%s  [%s]"%(ht['title'], cusp_str)
-    rtext(dw,PX,PY,title_str,FS,(180,200,255))
-    PY += 22
+    interp_text(IPXL, YP, title_str, FS, (180,200,255))
+    YP += 22
 
     tf = fnt(FS-1, sym=False)
     for body_line in ht['body']:
-        wrapped = wrap_text(body_line, tf, PW-15)
+        wrapped = wrap_text(body_line, tf, IPWW - 20)
         for wl in wrapped:
-            rtext(dw,PX+8,PY,wl,FS-1,(180,180,200))
-            PY += LH
-        if PY > TOT_H - 60: break
+            interp_text(IPXL + 8, YP, wl, FS-1, (180,180,200))
+            YP += LH
+        if YP > TOT_H - 60: break
 
-    if pls_in_house and PY < TOT_H - 60:
+    if pls_in_house and YP < TOT_H - 60:
         for p in pls_in_house:
+            if YP > TOT_H - 60: break
             pnm = p['nr'] if RU else p['ne']
             pmean = PMean.get(p['key'],'')
             ppos_str = "%s %s %d\u00b0%d'"%(p['sym'],p['sab'],p['deg'],p['min'])
             retro_s = '\u211e' if p['retro'] else ''
             if RU:
                 planet_line = "  \u25e6 %s (%s%s %s) \u0432 %s \u0434\u043e\u043c\u0435" % (pnm, p['abbr'], retro_s, ppos_str, ROMAN[p['house']-1])
-                meaning_line = "    \u25e6 \u0417\u043d\u0430\u0447\u0435\u043d\u0438\u0435: %s. %s \u0432 \u044d\u0442\u043e\u043c \u0434\u043e\u043c\u0435 \u043f\u0440\u043e\u044f\u0432\u043b\u044f\u0435\u0442 %s" % (pmean, pnm, ht['title'].split('—')[1].strip()[:30])
+                meaning_line = "    \u25e6 \u0417\u043d\u0430\u0447\u0435\u043d\u0438\u0435: %s. %s \u0432 \u044d\u0442\u043e\u043c \u0434\u043e\u043c\u0435 \u043f\u0440\u043e\u044f\u0432\u043b\u044f\u0435\u0442 %s" % (pmean, pnm, ht['title'].split('\u2014')[1].strip()[:30] if '\u2014' in ht['title'] else ht['title'][:30])
             else:
                 planet_line = "  \u25e6 %s (%s%s %s) in House %s" % (pnm, p['abbr'], ' R' if p['retro'] else '', ppos_str, ROMAN[p['house']-1])
-                meaning_line = "    \u25e6 Meaning: %s. %s expresses %s in this house" % (pmean, pnm, ht['title'].split('—')[1].strip()[:30])
-            rtext(dw,PX+8,PY,planet_line,FS-1,p['col'])
-            PY += LH
-            if PY < TOT_H - 40:
-                rtext(dw,PX+12,PY,meaning_line,FS-2,(160,160,180))
-                PY += LH
-                if PY > TOT_H - 60: break
-    elif PY < TOT_H - 40:
-        rtext(dw,PX+8,PY,"  \u25e6 "+T["no_planets"],FS-1,(130,130,150))
-        PY += LH
+                meaning_line = "    \u25e6 Meaning: %s. %s expresses %s in this house" % (pmean, pnm, ht['title'].split('\u2014')[1].strip()[:30] if '\u2014' in ht['title'] else ht['title'][:30])
+            interp_wrap(planet_line, FS-1, IPWW - 15, p['col'], indent=8)
+            if YP < TOT_H - 40:
+                interp_wrap(meaning_line, FS-2, IPWW - 20, (160,160,180), indent=12)
+    elif YP < TOT_H - 40:
+        interp_text(IPXL + 8, YP, "  \u25e6 "+T["no_planets"], FS-1, (130,130,150))
+        YP += LH
 
-    PY += 6
+    YP += 6
     # Divider every 3 houses
-    if (i+1) % 3 == 0 and i < 11 and PY < TOT_H - 100:
-        dw.line([(PX,PY),(PX+PW,PY)],fill=(40,40,70),width=1)
-        PY += 8
+    if (i+1) % 3 == 0 and i < 11 and YP < TOT_H - 100:
+        dw.line([(IPX+10,YP),(IPX+INTERP_W-10,YP)],fill=(40,40,70),width=1)
+        YP += 8
 
 # ── ClawHub link ──
-if PY < TOT_H - 50:
-    PY += 10
+if YP < TOT_H - 50:
+    YP += 10
     _url = "https://clawhub.ai/dynamicsalex/astro-natal-chart"
-    rcent(dw,PX+PW//2,PY,_url,FS-2,(80,80,120))
+    interp_cent(YP, _url, FS-2, (80,80,120))
 
+# ═══ Save ═══
 _name_clean = args.name.replace(" ", "_") if args.name else "chart"
-import sys
 _out = os.path.join(r"C:\Users\alter\.openclaw\workspace", "%s_full_natal_%s.png" % (_name_clean, "ru" if RU else "en"))
 img.save(_out, "PNG")
 if hasattr(sys.stdout, 'reconfigure'):

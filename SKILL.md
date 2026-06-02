@@ -1,7 +1,7 @@
 ---
 name: astro-natal-chart
-version: 4.1.0
-description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. Planets, zodiac signs, aspects, houses, wheel chart rendering with extended bilingual interpretation panel (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
+version: 4.2.0
+description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
 metadata:
   openclaw:
     requires:
@@ -335,6 +335,15 @@ python scripts/natal_chart_swe.py 14.12.1991 18:30 Ижевск --json
 ---
 
 ## Changelog
+
+### v4.2.0 (2026-06-02)
+- **3-column layout**: right panel split into Info (1/3 = 1200px) and Interpretation (2/3 = 2400px)
+  - **Info panel (1/3)**: essential data (date, time, place, coordinates, timezone), ASC/MC, planet table with houses, house cusp table, compact aspect list
+  - **Interpretation panel (2/3)**: Sun/Moon/ASC interpretation, dominant element, stelliums, retrograde planets, aspects with descriptions, houses with full planet meanings
+- **Text wrapping fixed**: `wrap_text()` now uses per-panel width (1200px for Info, 2400px for Interp) — long descriptions properly wrap instead of being clipped
+- **Renamed 'ТОЛКОВАНИЕ' → 'ИНТЕРПРЕТАЦИЯ'** in Russian mode (was already 'INTERPRETATION' in English)
+- **Vertical dividers** between all three columns
+- SKILL.md version bumped to 4.2.0
 
 ### v4.0.0 (2026-06-01)
 - **Bilingual interpretation**: all interpretation text available in both Russian and English
