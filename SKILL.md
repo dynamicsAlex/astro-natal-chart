@@ -1,6 +1,6 @@
 ---
 name: astro-natal-chart
-version: 4.3.1
+version: 4.3.2
 description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). AI conclusion via --conclusion flag. Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
 metadata:
   openclaw:
@@ -341,6 +341,12 @@ python scripts/natal_chart_swe.py 14.12.1991 18:30 Ижевск --json
 ---
 
 ## Changelog
+
+### v4.3.2 (2026-06-02)
+- **Moved aspects & configurations to Info panel**: detailed aspect list with descriptions (from interp panel) now appears in the middle Info panel, below planet/house tables
+- **Added text labels to aspect legend**: wheel legend now shows Unicode symbol + text abbreviation (☌ Conj, □ Sqr, △ Trine, etc.)
+- **Restored AI conclusion block**: "ЗАКЛЮЧЕНИЕ" / "CONCLUSION" block at bottom of Interpretation panel (was accidentally removed during refactoring)
+- SKILL.md version bumped to 4.3.2
 
 ### v4.3.1 (2026-06-02)
 - **Fixed aspect symbol rendering**: aspect symbols (☌, ☍, □, △, ✶, ⚹, ⚺, ∠) were rendering as rectangles because `segoeuisl.ttf` does not contain them — now all aspect symbols use `seguisym.ttf` via extended `is_z()` check
