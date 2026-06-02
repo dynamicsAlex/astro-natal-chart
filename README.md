@@ -200,10 +200,10 @@ Two bundled fonts in `scripts/`:
 
 | Font | Purpose | Glyphs |
 |---|---|---|
-| `seguisym.ttf` (2.4 MB) | Zodiac symbols | ♈♉♊♋♌♍♎♏♐♑♒♓ (U+2648–U+2653) |
+| `seguisym.ttf` (2.4 MB) | Zodiac symbols + aspect symbols | ♈♉♊♋♌♍♎♏♐♑♒♓ (U+2648–U+2653) + ☌☍□△✶⚹⚺∠ |
 | `segoeuisl.ttf` (854 KB) | All other text | Cyrillic, latin, digits |
 
-The `rtext()` function selects fonts **per character**: zodiac symbols → `seguisym.ttf`, everything else → `segoeuisl.ttf`. No tofu, no missing glyphs.
+The `rtext()` function selects fonts **per character**: zodiac and aspect symbols → `seguisym.ttf`, everything else → `segoeuisl.ttf`. No tofu, no missing glyphs.
 
 ## Scripts
 
@@ -228,6 +228,15 @@ The `rtext()` function selects fonts **per character**: zodiac symbols → `segu
 8. **Dominant elements** (fire, earth, air, water)
 
 ## Changelog
+
+### v4.3.1 (2026-06-02)
+- **Fixed aspect symbol rendering**: aspect symbols (☌, ☍, □, △, ✶, ⚹, ⚺, ∠) were rendering as rectangles because `segoeuisl.ttf` does not contain them — now all aspect symbols use `seguisym.ttf`
+- **Legend aspect symbols**: replaced text abbreviations (cj/sx/sq/tr/qn/op) in the wheel legend with proper Unicode aspect symbols
+
+### v4.3.0 (2026-06-02)
+- **`--conclusion FILE` flag**: AI-generated conclusion can be embedded in the chart
+- 3-phase workflow: JSON → AI analysis → rendered chart with conclusion
+- Conclusion appears at the bottom of the Interpretation panel with gold separator lines
 
 ### v4.2.0 (2026-06-02)
 - **3-column layout**: right panel split into Essential Data (1/3 = 1200px) and Interpretation (2/3 = 2400px)
