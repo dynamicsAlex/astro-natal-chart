@@ -8,7 +8,7 @@ metadata:
       bins:
         - python3
     emoji: "✨"
-    homepage: https://github.com/openclaw/openclaw
+    homepage: https://github.com/dynamicsAlex/astro-natal-chart
 ---
 
 # Astrology — Natal Chart
