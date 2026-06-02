@@ -1,7 +1,7 @@
 ---
 name: astro-natal-chart
-version: 4.2.0
-description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
+version: 4.3.0
+description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). AI conclusion via --conclusion flag. Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
 metadata:
   openclaw:
     requires:
@@ -316,10 +316,16 @@ python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang en
 # Options:
 #   --name "Person Name"  — name shown above the wheel
 #   --lang ru|en          — language of interpretation (default: en)
+#   --conclusion FILE     — path to text file with AI-generated conclusion
 
 # Output files:
 #   natal_full.png     — English version
 #   natal_full_ru.png  — Russian version
+
+# AI Conclusion workflow (for OpenClaw agents):
+#   Step 1: python scripts/natal_chart_swe.py <date> <time> <city> --json
+#   Step 2: AI analyzes JSON and writes conclusion to a file
+#   Step 3: python scripts/draw_wheel.py <date> <time> <city> --lang ru --name "Name" --conclusion <file>
 ```
 
 ### natal_chart_swe.py — Quick Reference
@@ -335,6 +341,16 @@ python scripts/natal_chart_swe.py 14.12.1991 18:30 Ижевск --json
 ---
 
 ## Changelog
+
+### v4.3.0 (2026-06-02)
+- **`--conclusion FILE` flag**: draw_wheel.py accepts a path to a text file with an AI-generated conclusion
+  - Conclusion appears in the bottom of the Interpretation panel after the houses section
+  - Decorative gold separator lines frame the conclusion block
+  - Title: «ЗАКЛЮЧЕНИЕ» (RU) / «CONCLUSION» (EN)
+  - Multi-paragraph text is wrapped to panel width (2400px)
+  - Works with any AI-generated summary — not rendered if flag is omitted
+- **3-phase workflow for OpenClaw agent**: (1) `natal_chart_swe.py --json` → (2) AI generates conclusion text → (3) `draw_wheel.py ... --conclusion file.txt`
+- SKILL.md version bumped to 4.3.0
 
 ### v4.2.0 (2026-06-02)
 - **3-column layout**: right panel split into Info (1/3 = 1200px) and Interpretation (2/3 = 2400px)
