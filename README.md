@@ -1,74 +1,74 @@
 # ✨ Astro Natal Chart
 
-Навык (skill) для [OpenClaw](https://github.com/openclaw/openclaw) — расчёт, интерпретация и визуализация натальной карты с помощью **Swiss Ephemeris** и **Pillow**.
+An [OpenClaw](https://github.com/openclaw/openclaw) skill — natal chart calculation, interpretation, and graphical visualization using **Swiss Ephemeris** and **Pillow**.
 
-Генерирует полноценную PNG-карту 5760×2880 px (3 колонки): натальное колесо + основные данные + подробная интерпретация. Поддержка русского и английского языков.
+Generates a full-featured 5760×2880 px PNG chart (3 columns): natal wheel + essential data + detailed interpretation. Supports Russian and English languages.
 
-## Возможности
+## Features
 
-- **Точный расчёт** через Swiss Ephemeris (pyswisseph 2.10.3.2) — NASA JPL DE431 эфемериды
-- **10 планет**: Солнце, Луна, Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун, Плутон
-- **12 домов** в системе Плацидуса (точный итеративный расчётов)
-- **8 типов аспектов**: соединение, оппозиция, трин, квадрат, секстиль, квинконс, полусекстиль, полуквадрат
-- **Ретроградность** определяется по знаку скорости планеты
-- **Билингвальная интерпретация**: русский (`--lang ru`) и английский (`--lang en`)
-- **Трёхколоночный рендер**: колесо (2160px) + данные (1200px) + интерпретация (2400px)
-- **50+ городов** с координатами и часовыми поясами в базе
+- **Precise calculation** via Swiss Ephemeris (pyswisseph 2.10.3.2) — NASA JPL DE431 ephemerides
+- **10 planets**: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto
+- **12 houses** in Placidus system (exact iterative calculation)
+- **8 aspect types**: conjunction, opposition, trine, square, sextile, quincunx, semisextile, semisquare
+- **Retrograde detection** via planet velocity sign
+- **Bilingual interpretation**: Russian (`--lang ru`) and English (`--lang en`)
+- **3-column layout**: wheel (2160px) + data (1200px) + interpretation (2400px)
+- **50+ cities** with coordinates and timezones in the built-in database
 
-## Схема раскладки
+## Layout
 
 ```
 +------------------+------------------+---------------------------+
 |                  |                  |                           |
-|   НАТАЛЬНОЕ      |   ОСНОВНЫЕ       |   ИНТЕРПРЕТАЦИЯ           |
-|   КОЛЕСО         |   ДАННЫЕ         |   (2400px = 2/3)          |
+|    NATAL         |    ESSENTIAL     |    INTERPRETATION         |
+|    WHEEL         |    DATA          |   (2400px = 2/3)          |
 |   (2160px)       |   (1200px = 1/3) |                           |
-|                  |                  |   - Солнце/Луна/Асцендент |
-|  - Секторы знаков|   - Дата, время, |   - Доминантная стихия    |
-|  - Куспиды домов |     место        |   - Стеллиумы             |
-|  - Маркеры планет|   - Координаты    |   - Ретроградные планеты  |
-|  - Линии аспектов|   - ASC / MC     |   - Аспекты с описаниями  |
-|  - ASC / MC      |   - Таблица планет|   - Дома с описаниями     |
-|                  |   - Таблица домов |     и планетами в каждом  |
-|  —— Легенды ——   |   - Аспекты       |                           |
-|  Планеты|Стихии |                  |                           |
-|  Аспекты         |                  |                           |
+|                  |                  |   - Sun/Moon/Ascendant    |
+|  - Sign sectors  |   - Date, time,  |   - Dominant element      |
+|  - House cusps   |     place        |   - Stelliums             |
+|  - Planet marks  |   - Coordinates  |   - Retrograde planets    |
+|  - Aspect lines  |   - ASC / MC     |   - Aspects with          |
+|  - ASC / MC      |   - Planet table |     descriptions          |
+|                  |   - House table  |   - 12 houses with        |
+|  --- Legends --- |   - Aspects      |     meanings & planets    |
+|  Planets|Elements|                  |                           |
+|  Aspects         |                  |                           |
 +------------------+------------------+---------------------------+
 ```
 
-## Требования
+## Requirements
 
-| Компонент | Детали |
+| Requirement | Details |
 |---|---|
-| **ОС** | Windows (x64) — протестировано на Windows 10/11 |
-| **Python** | **3.14.x** (встроенный `.pyd` скомпилирован для CPython 3.14) |
+| **OS** | Windows (x64) — tested on Windows 10/11 |
+| **Python** | **3.14.x** (bundled `.pyd` compiled for CPython 3.14) |
 | **Runtime** | **Microsoft Visual C++ Redistributable 2015–2022 (x64)** |
 | **Pillow** | **12.x** — `pip install pillow` |
 
-Установка:
-1. Установи [Python 3.14](https://www.python.org/downloads/release/python-3145/)
-2. Установи [VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
-3. Установи Pillow: `pip install pillow`
+Installation steps:
+1. Install [Python 3.14](https://www.python.org/downloads/release/python-3145/)
+2. Install [VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+3. Install Pillow: `pip install pillow`
 
-## Архитектура
+## Architecture
 
 ```
-natal_chart_swe.py --json  →  JSON данные  →  draw_wheel.py  →  PNG изображение
+natal_chart_swe.py --json  →  JSON data  →  draw_wheel.py  →  PNG image
                                   ↕
-                          natal_chart_swe.py  →  текстовый вывод
+                          natal_chart_swe.py  →  text output
 ```
 
-`natal_chart_swe.py` — **единственный расчётный движок**. `draw_wheel.py` только рендерит — он вызывает `natal_chart_swe.py --json` через subprocess и рисует колесо по полученным данным. Это гарантирует, что текстовый и графический вывод всегда совпадают.
+`natal_chart_swe.py` is the **sole calculation engine**. `draw_wheel.py` only renders — it calls `natal_chart_swe.py --json` via subprocess and draws the wheel from that data. This guarantees text and graphical output always match.
 
-## Установка
+## Installation
 
-### Через ClawHub (рекомендуется)
+### Via ClawHub (recommended)
 
 ```bash
 openclaw skills install "clawhub:astro-natal-chart"
 ```
 
-### Из репозитория
+### From repository
 
 ```bash
 git clone https://github.com/dynamicsAlex/astro-natal-chart.git
@@ -76,42 +76,42 @@ cd astro-natal-chart
 pip install pillow
 ```
 
-## Использование
+## Usage
 
-### Текстовый расчёт
+### Text calculation
 
 ```bash
-# Базовый вызов
-python scripts/natal_chart_swe.py <дата ДД.ММ.ГГГГ> <время ЧЧ:ММ> <город>
+# Basic usage
+python scripts/natal_chart_swe.py <date DD.MM.YYYY> <time HH:MM> <city>
 python scripts/natal_chart_swe.py 24.04.1983 06:00 Ижевск
 
-# JSON-экспорт (для рендеров)
+# JSON export (for renderers)
 python scripts/natal_chart_swe.py 24.04.1983 06:00 Ижевск --json
 ```
 
-### Графическая карта (PNG 5760×2880)
+### Graphical chart (PNG 5760×2880)
 
 ```bash
-# По умолчанию (английский)
+# Default (English)
 python scripts/draw_wheel.py
 
-# Русский язык
+# Russian language
 python scripts/draw_wheel.py --lang ru
 
-# Произвольные данные рождения
-python scripts/draw_wheel.py 24.04.1983 06:00 Ижевск --lang ru --name "Алексей"
-python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang en
+# Custom birth data
+python scripts/draw_wheel.py 24.04.1983 06:00 Ижевск --lang ru --name "Alexey"
+python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang en --name "Natalya"
 ```
 
-**Параметры:**
-- `--name "Имя"` — имя над колесом
-- `--lang ru|en` — язык интерпретации (по умолчанию: `en`)
+**Options:**
+- `--name "Name"` — name displayed above the wheel
+- `--lang ru|en` — interpretation language (default: `en`)
 
-**Файлы вывода:**
-- `{Name}_full_natal_en.png` — английская версия
-- `{Name}_full_natal_ru.png` — русская версия
+**Output files:**
+- `{Name}_full_natal_en.png` — English version
+- `{Name}_full_natal_ru.png` — Russian version
 
-### JSON-структура
+### JSON structure
 
 ```json
 {
@@ -132,120 +132,120 @@ python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang en
 }
 ```
 
-## Выходной формат
+## Text output format
 
 ```
-🌟 НАТАЛЬНАЯ КАРТА  [Swiss Ephemeris v20.23]
-📅 Дата: 24.04.1983  ⏰ Время: 06:00  📍 Место: Ижевск, Россия
+🌟 NATAL CHART  [Swiss Ephemeris v20.23]
+📅 Date: 24.04.1983  ⏰ Time: 06:00  📍 Place: Ижевск, Россия
 🌍 56.8519°N, 53.2114°E  🕐 Europe/Samara (UTC+4)
 📊 JD: 2447273.75
 
-⬆️  ASC — Близнецы 1°50′
-🜨  MC  — Козерог 24°45′
+⬆️ ASC — Gemini 1°50′
+🜨 MC  — Capricorn 24°45′
 
-ПЛАНЕТЫ:
-☀️ Солнце     — Телец 3°20′  [12 дом]  (+0.985°/д)
-🌙 Луна       — Дева 22°19′  [6 дом]   (+12.19°/д)
+PLANETS:
+☀️ Sun     — Taurus 3°20′  [12 house]  (+0.985°/d)
+🌙 Moon    — Virgo 22°19′   [6 house]   (+12.19°/d)
 ...
 
-ДОМА:
-I дом — Близнецы 1°50′
+HOUSES:
+I house — Gemini 1°50′
 ...
-XII дом — Рыбы 19°46′
+XII house — Pisces 19°46′
 
-КРУПНЫЕ АСПЕКТЫ:
-☌ Соединение: Mercury-Venus (орбис: 0.5°)
+MAJOR ASPECTS:
+☌ Conjunction: Mercury-Venus (orb: 0.5°)
 ...
 
-ИНТЕРПРЕТАЦИЯ:
-[подробная интерпретация]
+INTERPRETATION:
+[detailed interpretation]
 ```
 
-## Аспекты и орбисы
+## Aspects and orbs
 
-| Аспект | Символ | Орбис |
+| Aspect | Symbol | Orb |
 |---|---|---|
-| Соединение | ☌ | ±8° |
-| Оппозиция | ☍ | ±8° |
-| Квадрат | □ | ±7° |
-| Трин | △ | ±7° |
-| Секстиль | ✶ | ±5° |
-| Полусекстиль | ⚺ | ±2° |
-| Квинконс | ⚹ | ±2° |
-| Полуквадрат | ∠ | ±2° |
+| Conjunction | ☌ | ±8° |
+| Opposition | ☍ | ±8° |
+| Square | □ | ±7° |
+| Trine | △ | ±7° |
+| Sextile | ✶ | ±5° |
+| Semisextile | ⚺ | ±2° |
+| Quincunx | ⚹ | ±2° |
+| Semisquare | ∠ | ±2° |
 
-## Рендеринг шрифтов
+## Font rendering
 
-Два встроенных шрифта в `scripts/`:
+Two bundled fonts in `scripts/`:
 
-| Шрифт | Назначение | Глифы |
+| Font | Purpose | Glyphs |
 |---|---|---|
-| `seguisym.ttf` (2.4 МБ) | Символы зодиака | ♈♉♊♋♌♍♎♏♐♑♒♓ (U+2648–U+2653) |
-| `segoeuisl.ttf` (854 КБ) | Остальной текст | Кириллица, латиница, цифры |
+| `seguisym.ttf` (2.4 MB) | Zodiac symbols | ♈♉♊♋♌♍♎♏♐♑♒♓ (U+2648–U+2653) |
+| `segoeuisl.ttf` (854 KB) | All other text | Cyrillic, latin, digits |
 
-Функция `rtext()` выбирает шрифт **посимвольно**: символы зодиака → `seguisym.ttf`, всё остальное → `segoeuisl.ttf`. Никаких квадратиков и tofu.
+The `rtext()` function selects fonts **per character**: zodiac symbols → `seguisym.ttf`, everything else → `segoeuisl.ttf`. No tofu, no missing glyphs.
 
-## Скрипты
+## Scripts
 
-| Скрипт | Назначение | Зависимости |
+| Script | Purpose | Dependencies |
 |---|---|---|
-| `scripts/natal_chart_swe.py` | **Единственный расчётный движок.** Текстовая карта с `--json` экспортом | swisseph (встроенный .pyd), math, os |
-| `scripts/draw_wheel.py` | **Только рендер.** Вызывает `natal_chart_swe.py --json`, рисует PNG 5760×2880 | subprocess, json, math, os, argparse, Pillow |
-| `scripts/interp_data.py` | Данные интерпретации (RU/EN): дома, планеты, знаки, аспекты | — |
-| `scripts/seguisym.ttf` | Шрифт символов зодиака (~2.4 МБ) | — |
-| `scripts/segoeuisl.ttf` | Шрифт кириллицы/латиницы (~854 КБ) | — |
-| `scripts/swisseph.cp314-win_amd64.pyd.dat` | Встроенный бинарник Swiss Ephemeris (2 МБ) | MSVC++ Redist |
+| `scripts/natal_chart_swe.py` | **Sole calculation engine.** Text natal chart with `--json` export | swisseph (bundled .pyd), math, os |
+| `scripts/draw_wheel.py` | **Renderer only.** Calls `natal_chart_swe.py --json`, draws 5760×2880 chart PNG | subprocess, json, math, os, argparse, Pillow |
+| `scripts/interp_data.py` | Interpretation data (RU/EN): houses, planets, signs, aspects | — |
+| `scripts/seguisym.ttf` | Zodiac symbol font (~2.4 MB) | — |
+| `scripts/segoeuisl.ttf` | Cyrillic/latin font (~854 KB) | — |
+| `scripts/swisseph.cp314-win_amd64.pyd.dat` | Bundled Swiss Ephemeris binary (2 MB) | MSVC++ Redist |
 
-## Рекомендации по интерпретации
+## Interpretation guidelines
 
-1. **Солнце** — ядро личности
-2. **Луна** — эмоциональная природа
-3. **Асцендент** — маска, первое впечатление
-4. **MC** — карьерные амбиции
-5. **Стеллиумы** (3+ планеты в одном знаке/доме)
-6. **Ретроградные планеты** — энергия повёрнута внутрь
-7. **Крупные аспекты** — динамика личности
-8. **Доминирующие стихии** (огонь, земля, воздух, вода)
+1. **Sun** — core personality
+2. **Moon** — emotional nature
+3. **Ascendant** — mask, first impression
+4. **MC** — career aspirations
+5. **Stelliums** (3+ planets in one sign/house)
+6. **Retrograde planets** — energy turned inward
+7. **Major aspects** — personality dynamics
+8. **Dominant elements** (fire, earth, air, water)
 
 ## Changelog
 
 ### v4.2.0 (2026-06-02)
-- **Трёхколоночная раскладка**: правая панель разделена на «Основные данные» (1/3 = 1200px) и «Интерпретацию» (2/3 = 2400px)
-- **Исправлен перенос текста**: `wrap_text()` теперь учитывает ширину каждой панели — описания не обрезаются
-- **«ТОЛКОВАНИЕ» → «ИНТЕРПРЕТАЦИЯ»** в русской версии
-- Вертикальные разделители между всеми тремя колонками
+- **3-column layout**: right panel split into Essential Data (1/3 = 1200px) and Interpretation (2/3 = 2400px)
+- **Fixed text wrapping**: `wrap_text()` now uses per-panel width (1200px for Data, 2400px for Interp) — descriptions wrap properly instead of being clipped
+- **Renamed «ТОЛКОВАНИЕ» → «ИНТЕРПРЕТАЦИЯ»** in Russian mode
+- Vertical dividers between all three columns
 
 ### v4.0.0 (2026-06-01)
-- **Билингвальная интерпретация**: русский и английский языки
-- Расширенные описания домов (3 предложения на каждый дом)
-- Блок интерпретации аспектов
-- Имя человека в названии выходного файла
-- Исправлен баг контекста значений планет
-- Разделены данные интерпретации (`interp_data.py`) и логика рендеринга
+- **Bilingual interpretation**: Russian and English languages
+- Extended house descriptions (3 sentences per house)
+- Aspect interpretation block
+- Person's name in output filename
+- Fixed planet meaning context bug
+- Separated interpretation data (`interp_data.py`) from rendering logic
 
 ### v3.x (2026-06-01)
-- Исправлена раскраска элементов секторов
-- Два равных колеса, панорамная раскладка 5760×2880
-- Встроенные шрифты (зодиак + кириллица)
-- Знаки зодиака вместо текстовых аббревиатур
-- Рендер ниже колеса — без перекрытия
+- Fixed element coloring for sign sectors
+- Two equal-size wheels, panoramic 5760×2880 layout
+- Bundled fonts (zodiac + Cyrillic)
+- Zodiac symbols instead of text abbreviations
+- Legends below wheel — no overlap
 
 ### v2.x (2026-05-28)
-- Переход на Swiss Ephemeris (pyswisseph 2.10.3.2)
-- Система Плацидуса (точный итеративный)
-- Ретроградность через `FLG_SPEED`
-- База 50+ городов
-- Windows-совместимость с встроенным `.pyd`
+- Switched to Swiss Ephemeris (pyswisseph 2.10.3.2)
+- Placidus system (exact iterative)
+- Retrograde detection via `FLG_SPEED`
+- 50+ city database
+- Windows compatibility with bundled `.pyd`
 
-## Дисклеймер
+## Disclaimer
 
-Это инструмент для развлечения и самопознания, а не научный метод. Не принимайте медицинских или финансовых решений на основе астрологических прогнозов.
+This is an entertainment/educational tool, not a scientific method. Do not make medical or financial decisions based on astrological readings.
 
-## Автор
+## Author
 
 - GitHub: [@dynamicsAlex](https://github.com/dynamicsAlex)
 - ClawHub: [astro-natal-chart](https://clawhub.ai/dynamicsalex/astro-natal-chart)
 
-## Лицензия
+## License
 
 MIT
