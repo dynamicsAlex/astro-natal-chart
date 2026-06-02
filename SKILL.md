@@ -1,6 +1,6 @@
 ---
 name: astro-natal-chart
-version: 4.3.0
+version: 4.3.1
 description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). AI conclusion via --conclusion flag. Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
 metadata:
   openclaw:
@@ -342,15 +342,20 @@ python scripts/natal_chart_swe.py 14.12.1991 18:30 Ижевск --json
 
 ## Changelog
 
+### v4.3.1 (2026-06-02)
+- **Fixed aspect symbol rendering**: aspect symbols (☌, ☍, □, △, ✶, ⚹, ⚺, ∠) were rendering as rectangles because `segoeuisl.ttf` does not contain them — now all aspect symbols use `seguisym.ttf` via extended `is_z()` check
+- **Legend aspect symbols**: replaced text abbreviations (cj/sx/sq/tr/qn/op) in the wheel legend with proper Unicode aspect symbols from `seguisym`
+- SKILL.md version bumped to 4.3.1
+
 ### v4.3.0 (2026-06-02)
 - **`--conclusion FILE` flag**: draw_wheel.py accepts a path to a text file with an AI-generated conclusion
-  - Conclusion appears in the bottom of the Interpretation panel after the houses section
+  - Conclusion appears at the bottom of the Interpretation panel, after the houses section
   - Decorative gold separator lines frame the conclusion block
-  - Title: «ЗАКЛЮЧЕНИЕ» (RU) / «CONCLUSION» (EN)
+  - Title: «CONCLUSION» (EN) / «ЗАКЛЮЧЕНИЕ» (RU)
   - Multi-paragraph text is wrapped to panel width (2400px)
   - Works with any AI-generated summary — not rendered if flag is omitted
-- **3-phase workflow for OpenClaw agent**: (1) `natal_chart_swe.py --json` → (2) AI generates conclusion text → (3) `draw_wheel.py ... --conclusion file.txt`
-- SKILL.md version bumped to 4.3.0
+- **3-phase workflow for OpenClaw agent**: (1) `natal_chart_swe.py --json` → (2) AI generates conclusion → (3) `draw_wheel.py ... --conclusion file.txt`
+- SKILL.md version bumped to 4.3.1
 
 ### v4.2.0 (2026-06-02)
 - **3-column layout**: right panel split into Info (1/3 = 1200px) and Interpretation (2/3 = 2400px)
