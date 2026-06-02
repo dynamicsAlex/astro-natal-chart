@@ -284,12 +284,15 @@ asx=elx+ew+30; asy=LEG; ash=30; asw=190
 asb=asy+7*ash+14
 dw.rectangle((asx-10,asy-10,asx+asw,asb),fill=(12,12,28),outline=(60,60,100),width=2)
 rtext(dw,asx,asy,T["asp"],FM-2,(200,200,220))
-ail=[((200,200,200),"\u260c"),((100,180,240),"\u2736"),((220,80,80),"\u25a1"),
-     ((80,220,80),"\u25b3"),((180,160,60),"\u26b9"),((240,140,40),"\u260d")]
-for ai,(ac,al) in enumerate(ail):
+ail=[
+    ((200,200,200),"\u260c","Conj"),((100,180,240),"\u2736","Sext"),
+    ((220,80,80),"\u25a1","Sqr"),((80,220,80),"\u25b3","Trine"),
+    ((180,160,60),"\u26b9","Qnc"),((240,140,40),"\u260d","Opp")
+]
+for ai,(ac,al,albl) in enumerate(ail):
     ry=asy+ash+ai*ash
     dw.rectangle((asx,ry+4,asx+22,ry+24),fill=ac)
-    rtext(dw,asx+30,ry,al,FS-2,ac)
+    rtext(dw,asx+30,ry,al+" "+albl,FS-2,ac)
 
 # Panel dividers
 dw.line([(IX,0),(IX,TOT_H)],fill=(80,80,120),width=3)
@@ -419,8 +422,8 @@ for hd in house_data:
 
 info_divider()
 
-# ── Aspects (compact list for info panel) ──
-info_text(IXL, IY, T["asp"], FM, (255,220,100))
+# ═══ ASPECTS & CONFIGURATIONS (info panel) ══=
+info_text(IXL, IY, T["aspects_blk"], FM, (255,220,100))
 IY += FM + 4
 
 aspect_symbols = {
@@ -431,16 +434,40 @@ for a in asp_data:
     p1n = next((p['nr'] if RU else p['ne'] for p in planets_raw if p['abbr']==a['p1']), a['p1'])
     p2n = next((p['nr'] if RU else p['ne'] for p in planets_raw if p['abbr']==a['p2']), a['p2'])
     asp_sym = aspect_symbols.get(a['type'], '')
-    # Find orb
     orb_s = ""
     for ca in chart.get("aspects",[]):
-        if PM.get(ca.get("p1",""),(""))[0]==a['p1'] and PM.get(ca.get("p2",""),(""))[0]==a['p2']:
-            orb_s = " %.1f\u00b0"%ca.get("orb",0)
+        if PM.get(ca.get("p1",""),("",))[0]==a['p1'] and PM.get(ca.get("p2",""),("",))[0]==a['p2']:
+            orb_s = " (orb: %.1f\u00b0)"%ca.get("orb",0)
             break
-    line = "%s %s %s%s" % (p1n, asp_sym, p2n, orb_s)
-    info_text(IXL, IY, line, FS-2, a['col'])
-    IY += 20
+    a_type = a['type']
+    a_mean = AM.get(a_type, "")
+    line = "%s %s %s%s \u2014 %s" % (p1n, asp_sym, p2n, orb_s, a_mean)
+    info_wrap(line, FS-2, IPW - 10, a['col'], indent=0)
+    IY += 2
     if IY > TOT_H - 40: break
+
+# Stelliums
+sign_counts = Counter(p['si'] for p in planets_raw)
+house_counts = Counter(p['house'] for p in planets_raw)
+stellium_lines = []
+for si, cnt in sign_counts.items():
+    if cnt >= 3:
+        pls = [p for p in planets_raw if p['si']==si]
+        names = ['%s%s'%(p['abbr'],'\u211e' if p['retro'] else '') for p in pls]
+        stellium_lines.append("%s \u0432 %s (%d \u043f\u043b\u0430\u043d\u0435\u0442): %s"%(T["stellium"],SN[si],cnt,', '.join(names)) if RU else "%s in %s (%d planets): %s"%(T["stellium"],SN[si],cnt,', '.join(names)))
+for hi, cnt in house_counts.items():
+    if cnt >= 3:
+        pls = [p for p in planets_raw if p['house']==hi]
+        names = ['%s%s'%(p['abbr'],'\u211e' if p['retro'] else '') for p in pls]
+        stellium_lines.append("%s \u0432 %s \u0434\u043e\u043c\u0435 (%d \u043f\u043b\u0430\u043d\u0435\u0442): %s"%(T["stellium"],ROMAN[hi-1],cnt,', '.join(names)) if RU else "%s in House %s (%d planets): %s"%(T["stellium"],ROMAN[hi-1],cnt,', '.join(names)))
+if stellium_lines and IY < TOT_H - 40:
+    IY += 4
+    for sl in stellium_lines:
+        if IY > TOT_H - 40: break
+        info_wrap(sl, FS-2, IPW - 10, (255,180,255), indent=0)
+        IY += 4
+
+info_divider()
 
 # ═══════════════════════════════════════════════════════════
 # INTERPRETATION PANEL (2/3) — Full interpretation text
@@ -604,31 +631,6 @@ if retro:
             rlines.append("%s %s%s %d\u00b0%d' in House %s (%s) \u2014 internalized energy, karmic lessons" % (
                 p['sym'], p['ne'],' R',p['deg'],p['min'],ROMAN[p['house']-1], p['key']))
     draw_interp_section("", rlines, (180,180,255), (200,200,220))
-
-interp_divider()
-
-# ═══ ASPECTS WITH INTERPRETATION ═══
-interp_text(IPXL, YP, T["aspects_blk"], FL, (255,200,100))
-YP += FL + 6
-
-def planet_name(pkey):
-    p = next((x for x in planets_raw if x['key']==pkey), None)
-    if not p: return pkey
-    return p['nr'] if RU else p['ne']
-
-for a in asp_data:
-    if YP > TOT_H - 80: break
-    p1n = planet_name(a['p1']); p2n = planet_name(a['p2'])
-    a_type = a['type']
-    a_mean = AM.get(a_type, a_type)
-    orb_info = ""
-    for ca in chart.get("aspects",[]):
-        if PM.get(ca.get("p1",""),(""))[0]==a['p1'] and PM.get(ca.get("p2",""),(""))[0]==a['p2']:
-            orb_info = " (orb: %.1f\u00b0)"%ca.get("orb",0)
-            break
-    line = "%s \u2014 %s%s : %s"%(p1n, p2n, orb_info, a_mean)
-    interp_wrap(line, FS-1, IPWW - 10, a['col'], indent=5)
-    YP += 2
 
 interp_divider()
 
