@@ -106,10 +106,30 @@ python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang en --name "Natal
 **Options:**
 - `--name "Name"` — name displayed above the wheel
 - `--lang ru|en` — interpretation language (default: `en`)
+- `--conclusion FILE` — path to text file with AI-generated conclusion (optional)
 
 **Output files:**
 - `{Name}_full_natal_en.png` — English version
 - `{Name}_full_natal_ru.png` — Russian version
+
+### AI Conclusion workflow
+
+The `--conclusion` flag enables a 3-phase workflow for AI-assisted chart analysis:
+
+```bash
+# Step 1: Get chart data as JSON
+python scripts/natal_chart_swe.py 25.10.1985 21:35 Можга --json
+
+# Step 2: AI analyzes JSON and writes conclusion to a file
+# (agent writes analysis to /tmp/conclusion.txt)
+
+# Step 3: Render chart with AI conclusion embedded
+python scripts/draw_wheel.py 25.10.1985 21:35 Можга --lang ru --name "Natalya" --conclusion /tmp/conclusion.txt
+```
+
+The conclusion appears at the bottom of the Interpretation panel, after the houses section, framed by decorative gold separator lines. Title: «CONCLUSION» (EN) / «ЗАКЛЮЧЕНИЕ» (RU). Multi-paragraph text is auto-wrapped to panel width (2400px).
+
+Without `--conclusion` the chart renders normally (no AI summary block).
 
 ### JSON structure
 
@@ -190,7 +210,7 @@ The `rtext()` function selects fonts **per character**: zodiac symbols → `segu
 | Script | Purpose | Dependencies |
 |---|---|---|
 | `scripts/natal_chart_swe.py` | **Sole calculation engine.** Text natal chart with `--json` export | swisseph (bundled .pyd), math, os |
-| `scripts/draw_wheel.py` | **Renderer only.** Calls `natal_chart_swe.py --json`, draws 5760×2880 chart PNG | subprocess, json, math, os, argparse, Pillow |
+| `scripts/draw_wheel.py` | **Renderer only.** Calls `natal_chart_swe.py --json`, draws 5760×2880 chart PNG. Supports `--conclusion FILE` for AI-generated summary | subprocess, json, math, os, argparse, Pillow |
 | `scripts/interp_data.py` | Interpretation data (RU/EN): houses, planets, signs, aspects | — |
 | `scripts/seguisym.ttf` | Zodiac symbol font (~2.4 MB) | — |
 | `scripts/segoeuisl.ttf` | Cyrillic/latin font (~854 KB) | — |
