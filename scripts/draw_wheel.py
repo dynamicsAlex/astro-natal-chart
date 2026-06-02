@@ -86,8 +86,14 @@ def fnt(size, sym=False):
         except: pass
     _FC[k]=ImageFont.load_default(); return _FC[k]
 
-def is_z(ch): return '\u2648'<=ch<='\u2653'
+_ASP_CHARS = frozenset(('\u260c','\u260d','\u25a1','\u25b3','\u2736','\u26b9','\u26ba','\u2220'))
+
+def is_z(ch):
+    return ('\u2648'<=ch<='\u2653') or ch in _ASP_CHARS
+
+
 def ch_w(ch, f):
+
     bb = f.getbbox(ch); return (bb[2]-bb[0]) if bb else 10
 
 def rtext(draw, x, y, text, size, fill, cy=False):
@@ -278,8 +284,8 @@ asx=elx+ew+30; asy=LEG; ash=30; asw=190
 asb=asy+7*ash+14
 dw.rectangle((asx-10,asy-10,asx+asw,asb),fill=(12,12,28),outline=(60,60,100),width=2)
 rtext(dw,asx,asy,T["asp"],FM-2,(200,200,220))
-ail=[((200,200,200),T["cj"]),((100,180,240),T["sx"]),((220,80,80),T["sq"]),
-     ((80,220,80),T["tr"]),((180,160,60),T["qn"]),((240,140,40),T["op"])]
+ail=[((200,200,200),"\u260c"),((100,180,240),"\u2736"),((220,80,80),"\u25a1"),
+     ((80,220,80),"\u25b3"),((180,160,60),"\u26b9"),((240,140,40),"\u260d")]
 for ai,(ac,al) in enumerate(ail):
     ry=asy+ash+ai*ash
     dw.rectangle((asx,ry+4,asx+22,ry+24),fill=ac)
