@@ -24,6 +24,7 @@ for _f in os.listdir(_ttf_dir):
 parser = argparse.ArgumentParser()
 parser.add_argument("--lang", choices=["en","ru"], default="en")
 parser.add_argument("--name", default="")
+parser.add_argument("--conclusion", default="", help="Path to text file with AI conclusion")
 parser.add_argument("date", nargs="?", default="14.12.1991")
 parser.add_argument("time", nargs="?", default="18:30")
 parser.add_argument("city", nargs="?", default="\u0418\u0436\u0435\u0432\u0441\u043a")
@@ -672,6 +673,42 @@ for i, ht in enumerate(HM):
     if (i+1) % 3 == 0 and i < 11 and YP < TOT_H - 100:
         dw.line([(IPX+10,YP),(IPX+INTERP_W-10,YP)],fill=(40,40,70),width=1)
         YP += 8
+
+# ═══ CONCLUSION (AI-generated) ══=
+conclusion_text = ""
+if args.conclusion:
+    try:
+        with open(args.conclusion, "r", encoding="utf-8") as cf:
+            conclusion_text = cf.read().strip()
+    except Exception as e:
+        print("Warning: cannot read conclusion file:", e)
+
+if conclusion_text:
+    # Visual separator
+    YP += 8
+    dw.line([(IPX+30,YP),(IPX+INTERP_W-30,YP)],fill=(120,100,60),width=2)
+    YP += 18
+    # Title
+    _conc_title = "\u0417\u0410\u041a\u041b\u042e\u0427\u0415\u041d\u0418\u0415" if RU else "CONCLUSION"
+    interp_text(IPXL, YP, _conc_title, FL, (255,215,0))
+    YP += FL + 10
+    # Body text — wrap to full interp panel width
+    _tf = fnt(FS-1, sym=False)
+    for para in conclusion_text.split("\n"):
+        if not para.strip():
+            YP += 6
+            continue
+        wrapped = wrap_text(para.strip(), _tf, IPWW - 16)
+        for wl in wrapped:
+            if YP > TOT_H - 60: break
+            interp_text(IPXL + 8, YP, wl, FS-1, (240,230,200))
+            YP += LH  
+        YP += 4
+    # Decorative bottom line
+    if YP < TOT_H - 80:
+        YP += 6
+        dw.line([(IPX+60,YP),(IPX+INTERP_W-60,YP)],fill=(120,100,60),width=1)
+        YP += 14
 
 # ── ClawHub link ──
 if YP < TOT_H - 50:
