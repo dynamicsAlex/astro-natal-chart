@@ -25,6 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--lang", choices=["en","ru"], default="en")
 parser.add_argument("--name", default="")
 parser.add_argument("--conclusion", default="", help="Path to text file with AI conclusion")
+parser.add_argument("--frame", default="", help="Path to frame image .png.dat (QR code) to embed after conclusion")
 parser.add_argument("date", nargs="?", default="14.12.1991")
 parser.add_argument("time", nargs="?", default="18:30")
 parser.add_argument("city", nargs="?", default="\u0418\u0436\u0435\u0432\u0441\u043a")
@@ -32,6 +33,23 @@ args = parser.parse_args()
 RU = (args.lang == "ru")
 
 _SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load frame image (QR code) if provided
+frame_img = None
+if args.frame:
+    frame_path = args.frame
+    if not os.path.isabs(frame_path):
+        frame_path = os.path.join(_SCRIPTDIR, frame_path)
+    frame_path = os.path.normpath(frame_path)
+    if os.path.exists(frame_path):
+        try:
+            frame_img = Image.open(frame_path)
+            print(f"Frame loaded: {frame_img.size} from {frame_path}")
+        except Exception as e:
+            print(f"Warning: could not load frame image: {e}")
+    else:
+        print(f"Warning: frame not found at {frame_path}")
+
 res = subprocess.run([sys.executable, os.path.join(_SCRIPTDIR,"natal_chart_swe.py"),
     args.date, args.time, args.city, "--json"],
     capture_output=True, text=True, timeout=30, cwd=_SCRIPTDIR, encoding="utf-8")
@@ -469,6 +487,28 @@ if stellium_lines and IY < TOT_H - 40:
 
 info_divider()
 
+# ── ClawHub link (info panel) ──
+if frame_img is not None and IY < TOT_H - 40:
+    IY += 10
+    _tf = fnt(FS - 2, sym=False)
+    _url = "https://clawhub.ai/dynamicsalex/astro-natal-chart"
+    _bb = _tf.getbbox(_url)
+    _tw = (_bb[2] - _bb[0]) if _bb else 0
+    _ux = IXL + (IPW - _tw) // 2
+    dw.text((_ux, IY), _url, fill=(80, 80, 120), font=_tf)
+    IY += FS + 10
+
+# ── QR code (info panel) ──
+if frame_img is not None and IY < TOT_H - 40:
+    IY += 14
+    frame_w = frame_img.size[0]
+    frame_h = frame_img.size[1]
+    frame_x = IXL + IPW - frame_w
+    frame_y = IY
+    qr_rgb = frame_img.convert('RGB')
+    img.paste(qr_rgb, (frame_x, frame_y))
+    IY += frame_h + 10
+
 # ═══════════════════════════════════════════════════════════
 # INTERPRETATION PANEL (2/3) — Full interpretation text
 # ═══════════════════════════════════════════════════════════
@@ -718,11 +758,7 @@ if conclusion_text:
         dw.line([(IPX+60,YP),(IPX+INTERP_W-60,YP)],fill=(120,100,60),width=1)
         YP += 14
 
-# ── ClawHub link ──
-if YP < TOT_H - 50:
-    YP += 10
-    _url = "https://clawhub.ai/dynamicsalex/astro-natal-chart"
-    interp_cent(YP, _url, FS-2, (80,80,120))
+
 
 # ═══ Save ═══
 _name_clean = args.name.replace(" ", "_") if args.name else "chart"
