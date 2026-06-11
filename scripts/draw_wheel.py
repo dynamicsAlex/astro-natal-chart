@@ -505,8 +505,10 @@ if frame_img is not None and IY < TOT_H - 40:
     frame_h = frame_img.size[1]
     frame_x = IXL + IPW - frame_w
     frame_y = IY
-    qr_rgb = frame_img.convert('RGB')
-    img.paste(qr_rgb, (frame_x, frame_y))
+    if frame_img.mode == 'RGBA':
+        img.paste(frame_img, (frame_x, frame_y), frame_img)
+    else:
+        img.paste(frame_img, (frame_x, frame_y))
     IY += frame_h + 10
 
 # ═══════════════════════════════════════════════════════════

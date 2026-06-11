@@ -1,6 +1,6 @@
 ---
 name: astro-natal-chart
-version: 4.3.5
+version: 4.3.6
 description: Natal chart calculation, interpretation, and graphical visualization using Swiss Ephemeris (pyswisseph) + Pillow. 3-column layout: wheel + essential data (1/3) + interpretation panel (2/3). AI conclusion via --conclusion flag. Planets, zodiac signs, aspects, houses, wheel chart rendering with bilingual interpretation (RU/EN). Input: birth date, time, and location. Language --lang ru/en (default en), filename includes person name. Windows-compatible with bundled .pyd binary.
 metadata:
   openclaw:
@@ -342,6 +342,10 @@ python scripts/natal_chart_swe.py 14.12.1991 18:30 Ижевск --json
 ---
 
 ## Changelog
+
+### v4.3.6 (2026-06-11)
+- **Fixed QR code transparency**: RGBA frame images now preserve alpha channel when pasted onto the chart (was converting to RGB, causing black background behind transparent QR codes)
+- SKILL.md version bumped to 4.3.6
 
 ### v4.3.5 (2026-06-11)
 - **Moved divider line above ClawHub link and QR code**: thin separator now appears before the ClawHub URL and QR code in the info panel
